@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VisionWay — Resultado</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="result">
+  <header class="topbar">
+    <h1>VisionWay</h1>
+    <nav class="nav">
+      <a href="upload.html" class="nav-btn">Upload</a>
+      <a href="history.html" class="nav-btn">Histórico</a>
+    </nav>
+  </header>
+
+  <main class="screen">
+    <div class="card">
+      <h2>Resultado</h2>
+      <img id="result-img" alt="Resultado do reconhecimento" class="result-img"/>
+      <div class="result-info">
+        <p id="meta"></p>
+        <ul id="labels" class="labels"></ul>
+      </div>
+      <div class="actions">
+        <a href="upload.html" class="btn">Enviar nova imagem</a>
+        <a href="history.html" class="btn btn-outline">Ver histórico</a>
+      </div>
+      <p id="fallback" class="status" style="display:none;">
+        Nenhum resultado encontrado. Faça um upload para começar.
+      </p>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

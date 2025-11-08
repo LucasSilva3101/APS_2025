@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VisionWay — Upload</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="upload">
+  <header class="topbar">
+    <h1>VisionWay</h1>
+    <nav class="nav">
+      <a href="upload.html" class="nav-btn">Upload</a>
+      <a href="history.html" class="nav-btn">Histórico</a>
+    </nav>
+  </header>
+
+  <main class="screen">
+    <div id="upload-area" class="card">
+      <p>Arraste uma imagem aqui ou</p>
+      <button id="upload-btn" class="btn">Selecionar imagem</button>
+      <input type="file" id="file-input" accept="image/*" hidden />
+    </div>
+
+    <div id="preview" class="preview"></div>
+    <p id="status" class="status"></p>
+  </main>
+
+  <!-- Overlay de carregamento -->
+  <div id="loading" class="loading" hidden>
+    <div class="spinner"></div>
+    <p>Processando imagem...</p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
