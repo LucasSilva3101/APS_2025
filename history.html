@@ -11,22 +11,91 @@
     <h1>VisionWay</h1>
     <nav class="nav">
       <a href="upload.html" class="nav-btn">Upload</a>
+      <a href="history.html" class="nav-btn">Histórico</a>
     </nav>
   </header>
 
   <main class="screen">
     <div class="card">
       <div class="history-head">
-        <h2>Histórico de Reconhecimentos</h2>
-        <button id="clear-history" class="btn btn-outline">Limpar histórico</button>
+        <h2>Histórico de imagens</h2>
+        <button id="clear-btn" class="btn-outline">Limpar histórico</button>
       </div>
+
       <div id="history-list" class="history-list"></div>
-      <div class="actions">
-        <a href="upload.html" class="btn">Voltar ao Upload</a>
-      </div>
+      <p id="status" class="status"></p>
     </div>
   </main>
 
-  <script src="script.js"></script>
+  <div id="loading" class="loading" hidden>
+    <div class="spinner"></div>
+    <p>Carregando histórico...</p>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+    const listEl = document.getElementById("history-list");
+    const statusEl = document.getElementById("status");
+    const loading = document.getElementById("loading");
+    const clearBtn = document.getElementById("clear-btn");
+
+    async function loadHistory() {
+      loading.hidden = false;
+      statusEl.textContent = "";
+
+      try {
+        const res = await fetch(`${API_BASE}/history`);
+        if (!res.ok) throw new Error("Falha ao buscar histórico");
+
+        const data = await res.json();
+        listEl.innerHTML = "";
+
+        if (data.items.length === 0) {
+          listEl.innerHTML = "<p style='margin-top:12px;'>Nenhum histórico encontrado.</p>";
+          statusEl.textContent = "";
+          loading.hidden = true;
+          return;
+        }
+
+        for (const item of data.items) {
+          const div = document.createElement("div");
+          div.className = "history-item";
+          div.innerHTML = `
+            <img src="${item.image}" alt="Histórico" />
+            <div class="info">
+              <div><b>${item.count}</b> detecções</div>
+              <div>${new Date(item.timestamp).toLocaleString("pt-BR")}</div>
+              <div class="tags">${item.detections
+                .map(det => `<span class="tag">${det.label}</span>`)
+                .join("")}</div>
+            </div>
+          `;
+          listEl.appendChild(div);
+        }
+
+        statusEl.textContent = `Total de ${data.total} registros`;
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Erro ao carregar histórico: " + err.message;
+      } finally {
+        loading.hidden = true;
+      }
+    }
+
+    async function clearHistory() {
+      if (!confirm("Deseja apagar todo o histórico?")) return;
+      try {
+        const res = await fetch(`${API_BASE}/history`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Erro ao limpar histórico");
+        await loadHistory();
+        alert("Histórico apagado com sucesso!");
+      } catch (err) {
+        alert("Erro: " + err.message);
+      }
+    }
+
+    clearBtn.addEventListener("click", clearHistory);
+    window.addEventListener("DOMContentLoaded", loadHistory);
+  </script>
 </body>
 </html>

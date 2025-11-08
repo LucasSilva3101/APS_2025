@@ -26,12 +26,76 @@
     <p id="status" class="status"></p>
   </main>
 
-  <!-- Overlay de carregamento -->
   <div id="loading" class="loading" hidden>
     <div class="spinner"></div>
     <p>Processando imagem...</p>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    const uploadArea = document.getElementById("upload-area");
+    const uploadBtn  = document.getElementById("upload-btn");
+    const fileInput  = document.getElementById("file-input");
+    const preview    = document.getElementById("preview");
+    const statusEl   = document.getElementById("status");
+    const loading    = document.getElementById("loading");
+
+    uploadBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", handleFile);
+
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("dragover");
+    });
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove("dragover");
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith("image/")) processFile(file);
+      else alert("Envie uma imagem válida.");
+    });
+
+    async function handleFile(e) {
+      const file = e.target.files?.[0];
+      if (file && file.type.startsWith("image/")) await processFile(file);
+      else alert("Por favor, selecione uma imagem válida.");
+    }
+
+    async function processFile(file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        preview.innerHTML = `<img src="${ev.target.result}" alt="Pré-visualização">`;
+      };
+      reader.readAsDataURL(file);
+
+      statusEl.textContent = "";
+      loading.hidden = false;
+
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+
+      const url = `${API_BASE}/predict?save=true`;
+
+      try {
+        const res = await fetch(url, { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || res.statusText);
+
+        statusEl.textContent = `Imagem processada (${data.count} detecções).`;
+        sessionStorage.setItem("vw_last", JSON.stringify(data));
+
+        loading.hidden = true;
+        window.location.href = "result.html";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Erro ao enviar: " + err.message;
+        loading.hidden = true;
+      }
+    }
+  </script>
 </body>
 </html>
