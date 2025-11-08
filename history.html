@@ -16,13 +16,9 @@
   </header>
 
   <main class="screen">
-    <div class="card">
-      <div class="history-head">
-        <h2>Histórico de imagens</h2>
-        <button id="clear-btn" class="btn-outline">Limpar histórico</button>
-      </div>
-
-      <div id="history-list" class="history-list"></div>
+    <div class="card history-card">
+      <h2>Histórico de Reconhecimentos</h2>
+      <div id="history-list" class="history-grid"></div>
       <p id="status" class="status"></p>
     </div>
   </main>
@@ -37,7 +33,6 @@
     const listEl = document.getElementById("history-list");
     const statusEl = document.getElementById("status");
     const loading = document.getElementById("loading");
-    const clearBtn = document.getElementById("clear-btn");
 
     async function loadHistory() {
       loading.hidden = false;
@@ -57,23 +52,28 @@
           return;
         }
 
-        for (const item of data.items) {
+        data.items.forEach((item, idx) => {
           const div = document.createElement("div");
-          div.className = "history-item";
+          div.className = "history-thumb";
+          div.title = `Detectados: ${item.count}`;
           div.innerHTML = `
-            <img src="${item.image}" alt="Histórico" />
+            <img src="${item.image}" alt="Histórico #${idx + 1}">
             <div class="info">
-              <div><b>${item.count}</b> detecções</div>
-              <div>${new Date(item.timestamp).toLocaleString("pt-BR")}</div>
-              <div class="tags">${item.detections
-                .map(det => `<span class="tag">${det.label}</span>`)
-                .join("")}</div>
+              <p><b>${item.count}</b> detecções</p>
+              <p>${new Date(item.timestamp).toLocaleString("pt-BR")}</p>
+              <div class="tags">
+                ${item.detections.map(det => `<span class="tag">${det.label}</span>`).join("")}
+              </div>
             </div>
           `;
+          div.addEventListener("click", () => {
+            sessionStorage.setItem("vw_last", JSON.stringify(item));
+            window.location.href = "result.html";
+          });
           listEl.appendChild(div);
-        }
+        });
 
-        statusEl.textContent = `Total de ${data.total} registros`;
+        statusEl.textContent = `Total de ${data.total} imagens processadas`;
       } catch (err) {
         console.error(err);
         statusEl.textContent = "Erro ao carregar histórico: " + err.message;
@@ -82,19 +82,6 @@
       }
     }
 
-    async function clearHistory() {
-      if (!confirm("Deseja apagar todo o histórico?")) return;
-      try {
-        const res = await fetch(`${API_BASE}/history`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Erro ao limpar histórico");
-        await loadHistory();
-        alert("Histórico apagado com sucesso!");
-      } catch (err) {
-        alert("Erro: " + err.message);
-      }
-    }
-
-    clearBtn.addEventListener("click", clearHistory);
     window.addEventListener("DOMContentLoaded", loadHistory);
   </script>
 </body>

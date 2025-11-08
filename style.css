@@ -97,3 +97,127 @@ h1 { font-size: 1.8rem; color: #00e6ac; }
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.upload-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.preview {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ================= RESULTADOS ================= */
+.result-card {
+  max-width: 720px;
+  width: 90%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Contêiner da imagem: controla o tamanho máximo e evita overflow */
+.result-container {
+  width: 100%;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
+/* A imagem fica proporcional e nunca ultrapassa a div */
+.result-img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 230, 172, 0.4);
+  object-fit: contain;
+}
+
+/* Título e margens */
+.result-card h2 {
+  margin-bottom: 12px;
+}
+
+.result-info {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.labels {
+  margin-top: 8px;
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ================= HISTÓRICO ================= */
+.history-card {
+  width: 90%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.history-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(0, 230, 172, 0.4);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.3s;
+  cursor: pointer;
+}
+
+.history-thumb:hover {
+  transform: scale(1.03);
+  border-color: #00ffa3;
+}
+
+.history-thumb img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0, 230, 172, 0.3);
+  background-color: #000;
+}
+
+.history-thumb .info {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #e0e0e0;
+}
+
+.history-thumb .tags {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-thumb .tag {
+  border: 1px solid #00e6ac;
+  color: #00e6ac;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+

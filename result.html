@@ -16,9 +16,11 @@
   </header>
 
   <main class="screen">
-    <div class="card">
+    <div class="card result-card">
       <h2>Resultado</h2>
-      <img id="result-img" alt="Resultado do reconhecimento" class="result-img"/>
+      <div class="result-container">
+        <img id="result-img" alt="Resultado do reconhecimento" class="result-img"/>
+      </div>
       <div class="result-info">
         <p id="meta"></p>
         <ul id="labels" class="labels"></ul>
@@ -33,6 +35,26 @@
     </div>
   </main>
 
-  <script src="script.js"></script>
+  <script>
+    const img  = document.getElementById("result-img");
+    const meta = document.getElementById("meta");
+    const labelsUl = document.getElementById("labels");
+    const fallback = document.getElementById("fallback");
+
+    let data = JSON.parse(sessionStorage.getItem("vw_last") || "null");
+
+    if (!data) {
+      img.style.display = "none";
+      meta.textContent = "";
+      labelsUl.innerHTML = "";
+      fallback.style.display = "block";
+    } else {
+      img.src = data.image;
+      meta.textContent = `Detectados: ${data.count} • ${new Date(data.timestamp).toLocaleString("pt-BR")}`;
+      labelsUl.innerHTML = data.detections && data.detections.length
+        ? data.detections.map(d => `<li class="tag">${d.label}</li>`).join("")
+        : `<li class="tag">—</li>`;
+    }
+  </script>
 </body>
 </html>
