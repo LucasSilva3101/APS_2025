@@ -18,17 +18,22 @@
   <main class="screen">
     <div class="card result-card">
       <h2>Resultado</h2>
+
+      <!-- Mantém a imagem SEM estourar a div -->
       <div class="result-container">
         <img id="result-img" alt="Resultado do reconhecimento" class="result-img"/>
       </div>
+
       <div class="result-info">
         <p id="meta"></p>
         <ul id="labels" class="labels"></ul>
       </div>
+
       <div class="actions">
         <a href="upload.html" class="btn">Enviar nova imagem</a>
         <a href="history.html" class="btn btn-outline">Ver histórico</a>
       </div>
+
       <p id="fallback" class="status" style="display:none;">
         Nenhum resultado encontrado. Faça um upload para começar.
       </p>
@@ -36,25 +41,58 @@
   </main>
 
   <script>
-    const img  = document.getElementById("result-img");
-    const meta = document.getElementById("meta");
+    // Helpers
+    const img      = document.getElementById("result-img");
+    const meta     = document.getElementById("meta");
     const labelsUl = document.getElementById("labels");
     const fallback = document.getElementById("fallback");
 
-    let data = JSON.parse(sessionStorage.getItem("vw_last") || "null");
-
-    if (!data) {
-      img.style.display = "none";
-      meta.textContent = "";
-      labelsUl.innerHTML = "";
-      fallback.style.display = "block";
-    } else {
-      img.src = data.image;
-      meta.textContent = `Detectados: ${data.count} • ${new Date(data.timestamp).toLocaleString("pt-BR")}`;
-      labelsUl.innerHTML = data.detections && data.detections.length
-        ? data.detections.map(d => `<li class="tag">${d.label}</li>`).join("")
-        : `<li class="tag">—</li>`;
+    function getLast() {
+      try { return JSON.parse(sessionStorage.getItem("vw_last") || "null"); }
+      catch { return null; }
     }
+
+    function computeCounts(detections) {
+      const counts = {};
+      (detections || []).forEach(d => {
+        const k = d.label;
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      return counts;
+    }
+
+    (function render() {
+      const data = getLast();
+
+      if (!data) {
+        img.style.display = "none";
+        meta.textContent = "";
+        labelsUl.innerHTML = "";
+        fallback.style.display = "block";
+        return;
+      }
+
+      // imagem
+      img.src = data.image;
+
+      // meta
+      const ts = new Date(data.timestamp).toLocaleString("pt-BR");
+      meta.textContent = `Detectados: ${data.count} • ${ts}`;
+
+      // usa campos do backend; se não vierem, calcula
+      const countsByLabel = data.counts_by_label || computeCounts(data.detections);
+      const labelsUnique  = data.labels_unique || Object.keys(countsByLabel);
+
+      if (!labelsUnique.length) {
+        labelsUl.innerHTML = `<li class="tag">—</li>`;
+        return;
+      }
+
+      labelsUl.innerHTML = labelsUnique
+        .sort((a,b) => a.localeCompare(b, 'pt-BR'))
+        .map(l => `<li class="tag">${l} (${countsByLabel[l] ?? 0})</li>`)
+        .join("");
+    })();
   </script>
 </body>
 </html>

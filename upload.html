@@ -5,6 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VisionWay — Upload</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ---- ajustes visuais do estado de processamento ---- */
+
+    /* overlay de carregamento centralizado com uma “caixa” */
+    .loading[hidden] { display: none; }
+    .loading {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 10, 14, 0.82);
+      display: grid;
+      place-items: center;
+      z-index: 9999;
+    }
+    .loading .box {
+      background: rgba(0, 0, 0, 0.35);
+      padding: 20px 24px;
+      border: 1px solid rgba(0, 230, 172, 0.27);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+    .spinner {
+      width: 56px;
+      height: 56px;
+      border: 6px solid rgba(255,255,255,0.25);
+      border-top-color: #00e6ac;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      box-shadow: 0 0 10px rgba(0,230,172,0.35);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* quando está carregando, desabilita interações e dá feedback visual */
+    body.is-loading #upload-area {
+      opacity: .35;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    body.is-loading .preview img {
+      filter: blur(3px) brightness(.7);
+      transform: scale(1.01);
+      transition: filter .2s ease, transform .2s ease;
+    }
+
+    /* centraliza a prévia grande lá no topo */
+    .preview {
+      margin-top: 28px;
+      display: flex;
+      justify-content: center;
+    }
+    .preview img {
+      max-width: 640px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 230, 172, 0.4);
+      display: block;
+    }
+
+    /* área de upload */
+    #upload-area {
+      border: 2px dashed #00e6ac;
+      border-radius: 15px;
+      padding: 24px;
+      width: 95%;
+      max-width: 760px;
+      margin: 24px auto 0;
+      background: rgba(0, 0, 0, 0.1);
+      text-align: center;
+      transition: background .3s, border-color .3s, opacity .2s;
+    }
+    #upload-area.dragover {
+      background: rgba(0, 230, 172, 0.1);
+      border-color: #00ffa3;
+    }
+  </style>
 </head>
 <body data-page="upload">
   <header class="topbar">
@@ -16,23 +94,28 @@
   </header>
 
   <main class="screen">
-    <div id="upload-area" class="card upload-center">
+    <!-- prévia centrada -->
+    <div id="preview" class="preview"></div>
+
+    <!-- área de upload -->
+    <div id="upload-area" class="card">
       <p>Arraste uma imagem aqui ou</p>
       <button id="upload-btn" class="btn">Selecionar imagem</button>
       <input type="file" id="file-input" accept="image/*" hidden />
+      <p id="status" class="status" style="margin-top:12px;"></p>
     </div>
-
-    <div id="preview" class="preview"></div>
-    <p id="status" class="status"></p>
   </main>
 
+  <!-- overlay de carregamento -->
   <div id="loading" class="loading" hidden>
-    <div class="spinner"></div>
-    <p>Processando imagem...</p>
+    <div class="box">
+      <div class="spinner"></div>
+      <p>Processando imagem...</p>
+    </div>
   </div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8000";
+    const API_URL = "http://127.0.0.1:8000/predict";
 
     const uploadArea = document.getElementById("upload-area");
     const uploadBtn  = document.getElementById("upload-btn");
@@ -61,39 +144,54 @@
 
     async function handleFile(e) {
       const file = e.target.files?.[0];
-      if (file && file.type.startsWith("image/")) await processFile(file);
-      else alert("Por favor, selecione uma imagem válida.");
+      if (file && file.type.startsWith("image/")) {
+        await processFile(file);
+      } else {
+        alert("Por favor, selecione uma imagem válida.");
+      }
+    }
+
+    function dataURLFromFile(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
     }
 
     async function processFile(file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        preview.innerHTML = `<img src="${ev.target.result}" alt="Pré-visualização">`;
-      };
-      reader.readAsDataURL(file);
-
+      // mostra prévia já centralizada
+      const dataUrl = await dataURLFromFile(file);
+      preview.innerHTML = `<img src="${dataUrl}" alt="Pré-visualização">`;
       statusEl.textContent = "";
+
+      // entra no estado de carregamento
+      document.body.classList.add("is-loading");
       loading.hidden = false;
 
       const formData = new FormData();
       formData.append("file", file, file.name);
 
-      const url = `${API_BASE}/predict?save=true`;
-
       try {
-        const res = await fetch(url, { method: "POST", body: formData });
+        const res = await fetch(API_URL, { method: "POST", body: formData });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || res.statusText);
 
-        statusEl.textContent = `Imagem processada (${data.count} detecções).`;
+        // guarda a resposta COMPLETA (inclui counts_by_label e labels_unique)
         sessionStorage.setItem("vw_last", JSON.stringify(data));
 
+        // sai do estado de carregamento e navega
         loading.hidden = true;
+        document.body.classList.remove("is-loading");
         window.location.href = "result.html";
       } catch (err) {
         console.error(err);
         statusEl.textContent = "Erro ao enviar: " + err.message;
+
+        // sai do estado de carregamento em caso de erro
         loading.hidden = true;
+        document.body.classList.remove("is-loading");
       }
     }
   </script>

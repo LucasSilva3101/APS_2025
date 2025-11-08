@@ -30,9 +30,39 @@
 
   <script>
     const API_BASE = "http://127.0.0.1:8000";
-    const listEl = document.getElementById("history-list");
+    const listEl   = document.getElementById("history-list");
     const statusEl = document.getElementById("status");
-    const loading = document.getElementById("loading");
+    const loading  = document.getElementById("loading");
+
+    // util: cria HTML de chips únicos com contagem (usa fields do backend; se faltar, computa)
+    function buildTagsHTML(item, maxTags = 10) {
+      // se o backend já trouxe, ótimo:
+      let counts = item.counts_by_label || {};
+      let uniques = item.labels_unique || Object.keys(counts);
+
+      // fallback se veio de versões antigas:
+      if (!uniques.length && Array.isArray(item.detections)) {
+        counts = {};
+        for (const d of item.detections) counts[d.label] = (counts[d.label] || 0) + 1;
+        uniques = Object.keys(counts);
+      }
+
+      // ordena por frequência desc, depois alfabético
+      uniques.sort((a, b) => {
+        const diff = (counts[b] || 0) - (counts[a] || 0);
+        return diff !== 0 ? diff : a.localeCompare(b, "pt-BR");
+      });
+
+      // limita quantidade de chips pra não poluir
+      const limited = uniques.slice(0, maxTags);
+
+      const chips = limited.map(l => `<span class="tag">${l} (${counts[l] ?? 0})</span>`).join("");
+      const extra = uniques.length > maxTags
+        ? `<span class="tag">+${uniques.length - maxTags}</span>`
+        : "";
+
+      return chips + extra;
+    }
 
     async function loadHistory() {
       loading.hidden = false;
@@ -45,10 +75,9 @@
         const data = await res.json();
         listEl.innerHTML = "";
 
-        if (data.items.length === 0) {
+        if (!data.items.length) {
           listEl.innerHTML = "<p style='margin-top:12px;'>Nenhum histórico encontrado.</p>";
           statusEl.textContent = "";
-          loading.hidden = true;
           return;
         }
 
@@ -56,20 +85,24 @@
           const div = document.createElement("div");
           div.className = "history-thumb";
           div.title = `Detectados: ${item.count}`;
+
           div.innerHTML = `
             <img src="${item.image}" alt="Histórico #${idx + 1}">
             <div class="info">
               <p><b>${item.count}</b> detecções</p>
               <p>${new Date(item.timestamp).toLocaleString("pt-BR")}</p>
               <div class="tags">
-                ${item.detections.map(det => `<span class="tag">${det.label}</span>`).join("")}
+                ${buildTagsHTML(item, 12)}
               </div>
             </div>
           `;
+
+          // abrir no Resultado
           div.addEventListener("click", () => {
             sessionStorage.setItem("vw_last", JSON.stringify(item));
             window.location.href = "result.html";
           });
+
           listEl.appendChild(div);
         });
 
